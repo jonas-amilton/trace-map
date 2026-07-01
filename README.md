@@ -68,12 +68,12 @@ php trace-map.php --self-test
 
 ## Níveis de confiança na saída
 
-| Tag | Significado |
-|---|---|
-| `[confirmed]` | Resolução direta: sintaxe, tipo explícito, ou classe estática |
-| `[inferred]` | Atribuição local, binding Laravel, ou única implementação |
-| `[candidate]` | Mais de um alvo possível (ex: union type) |
-| `[unresolved]` | Não foi possível resolver com segurança |
+| Tag | Cor | Significado |
+|---|---|---|
+| `[confirmed]` | 🟢 verde | Resolução direta: sintaxe, tipo explícito, ou classe estática |
+| `[inferred]` | 🔵 cyan | Atribuição local, binding Laravel, ou única implementação |
+| `[candidate]` | 🟡 amarelo | Mais de um alvo possível (ex: union type) |
+| `[unresolved]` | 🔴 vermelho | Não foi possível resolver com segurança |
 
 ## O que NÃO faz
 
