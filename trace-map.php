@@ -21,6 +21,17 @@ declare(strict_types=1);
 
 const TM_VERSION = '0.1.3';
 
+if (!function_exists('str_starts_with')) {
+    function str_starts_with(string $haystack, string $needle): bool {
+        return strncmp($haystack, $needle, strlen($needle)) === 0;
+    }
+}
+if (!function_exists('str_contains')) {
+    function str_contains(string $haystack, string $needle): bool {
+        return strpos($haystack, $needle) !== false;
+    }
+}
+
 final class TraceMap
 {
     private string $root;
@@ -365,7 +376,9 @@ final class TraceMap
         // Constructor-promoted properties.
         if (preg_match_all('/(?:public|protected|private)\s+(?:readonly\s+)?([\\\\A-Za-z_][\\\\A-Za-z0-9_|?&]*)\s+\$([A-Za-z_][A-Za-z0-9_]*)/', $segment, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $m) {
-                $properties[$m[2]] ??= $this->resolveType($m[1], $class);
+                if (!isset($properties[$m[2]])) {
+                    $properties[$m[2]] = $this->resolveType($m[1], $class);
+                }
             }
         }
         return $properties;
@@ -566,7 +579,7 @@ final class TraceMap
     }
 
     /** @param array<string,mixed> $class @return string|array<string,mixed> */
-    private function resolveType(string $type, array $class): string|array
+    private function resolveType(string $type, array $class)
     {
         $type = trim($type);
         $type = ltrim($type, '?');
@@ -763,7 +776,9 @@ final class TraceMap
             }
         }
 
-        usort($calls, static fn(array $a, array $b): int => $a['line'] <=> $b['line']);
+        usort($calls, static function (array $a, array $b): int {
+            return $a['line'] <=> $b['line'];
+        });
         return $this->callsCache[$method['id']] = $calls;
     }
 
@@ -835,7 +850,9 @@ final class TraceMap
         if ($candidates) {
             $base['confidence'] = 'candidate';
             $base['evidence'] = 'multiple implementations found';
-            $base['candidates'] = array_map(static fn(array $m): string => $m['id'], $candidates);
+            $base['candidates'] = array_map(static function (array $m): string {
+                return $m['id'];
+            }, $candidates);
         } else {
             $base['evidence'] = 'method not found in indexed class hierarchy';
         }
@@ -941,7 +958,9 @@ final class TraceMap
             $out[] = $parsed['exception'];
         }
 
-        $appFrames = array_values(array_filter($parsed['frames'], static fn(array $f): bool => $f['app_frame']));
+        $appFrames = array_values(array_filter($parsed['frames'], static function (array $f): bool {
+            return $f['app_frame'];
+        }));
         if ($appFrames) {
             $out[] = '';
             $out[] = 'Runtime stack (evidence from log)';
@@ -1169,7 +1188,9 @@ PHP
 
     recursiveDelete($tmp);
 
-    $failures = array_keys(array_filter($checks, static fn(bool $v): bool => !$v));
+    $failures = array_keys(array_filter($checks, static function (bool $v): bool {
+        return !$v;
+    }));
     if ($failures) {
         echo "SELF-TEST FAIL: missing expected calls:\n";
         foreach ($failures as $f) {
