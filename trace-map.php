@@ -971,7 +971,8 @@ final class TraceMap
                 $indent = str_repeat('    ', $i);
                 $branch = $i === 0 ? '└── ' : '└── ';
                 $out[] = $indent . $branch . $label;
-                $out[] = $indent . '    file: ' . $frame['file'] . ':' . $frame['line'] . ' [confirmed]';
+                $tag = $this->colorConfidence('confirmed');
+                $out[] = $indent . '    file: ' . $frame['file'] . ':' . $frame['line'] . ' ' . $tag;
             }
         }
 
@@ -1021,7 +1022,7 @@ final class TraceMap
             $detailIndent = ($via['is_last'] ?? false)
                 ? $indent . '    '
                 : $indent . '│   ';
-            $out[] = $detailIndent . 'line: ' . $via['source_relative'] . ':' . $via['line'] . ' [' . $via['confidence'] . ']';
+            $out[] = $detailIndent . 'line: ' . $via['source_relative'] . ':' . $via['line'] . ' ' . $this->colorConfidence($via['confidence']);
             if ($via['receiver_evidence'] ?? null) {
                 $out[] = $detailIndent . '[' . $via['receiver_evidence'] . ']';
             }
@@ -1068,7 +1069,7 @@ final class TraceMap
                 $branch = $isLastCall ? '└── ' : '├── ';
                 $out[] = $childIndent . $branch . 'calls ' . ($call['receiver_type'] ?: '$dynamic') . '::' . $call['called'] . '(' . $call['args'] . ')';
                 $detailIndent = $isLastCall ? ($childIndent . '    ') : ($childIndent . '│   ');
-                $out[] = $detailIndent . 'line: ' . $method['relative'] . ':' . $call['line'] . ' [' . $call['confidence'] . ']';
+                $out[] = $detailIndent . 'line: ' . $method['relative'] . ':' . $call['line'] . ' ' . $this->colorConfidence($call['confidence']);
                 if ($call['receiver_evidence'] ?? null) {
                     $out[] = $detailIndent . '[' . $call['receiver_evidence'] . ']';
                 }
@@ -1080,6 +1081,18 @@ final class TraceMap
     }
 
     /** @param array<string,mixed> $method */
+    private function colorConfidence(string $confidence): string
+    {
+        $colors = [
+            'confirmed' => "\033[32m",   // green
+            'inferred'  => "\033[36m",   // cyan
+            'candidate' => "\033[33m",   // yellow
+            'unresolved' => "\033[31m",  // red
+        ];
+        $code = $colors[$confidence] ?? "\033[0m";
+        return $code . '[' . $confidence . "]\033[0m";
+    }
+
     private function formatMethod(array $method): string
     {
         $params = trim((string)$method['params_raw']);
